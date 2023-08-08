@@ -1,6 +1,7 @@
 <script lang="ts">
-  import "../app.css";
+  import "../app.css"
 </script>
-<main class="bg-zinc-800 h-screen">
-<slot />
+
+<main class="h-screen bg-zinc-800">
+  <slot />
 </main>
