@@ -27,28 +27,47 @@ export function dropZone(node: HTMLElement, options: any) {
     ...options
   }
 
-  function handleDragEnter(event: DragEvent) {
+  function handleDragEnter(event: any) {
     event.target.classList.add(state.dragOverClass)
   }
 
-  function handleDragLeave(event: DragEvent) {
+  function handleDragLeave(event: any) {
     event.target.classList.remove(state.dragOverClass)
   }
 
-  function handleDragOver(event) {
+  function handleDragOver(event: DragEvent) {
     event.preventDefault()
-    event.dataTransfer.dropEffect = state.dropEffect
+    if (event.dataTransfer?.dropEffect) {
+      event.dataTransfer.dropEffect = state.dropEffect
+    }
   }
 
-  function handleDrop(event) {
+  function handleDrop(event: DragEvent) {
     event.preventDefault()
-    const data = event.dataTransfer.getData("text/plain")
+    const data = event?.dataTransfer?.getData("text/plain")
+    // @ts-ignore
     event.target.classList.remove(state.dragOverClass)
-    state.onDropZone({ id: data, columnId: state.columnId },event)
+    state.onDropZone({ id: data, columnId: state.columnId }, event)
   }
 
   node.addEventListener("dragenter", handleDragEnter)
   node.addEventListener("dragleave", handleDragLeave)
   node.addEventListener("dragover", handleDragOver)
   node.addEventListener("drop", handleDrop)
+
+  return {
+    update(options: any) {
+      state = {
+        dropEffect: "move",
+        dragOverClass: "droppable",
+        ...options
+      }
+    },
+    destroy() {
+      node.removeEventListener("dragenter", handleDragEnter)
+      node.removeEventListener("dragleave", handleDragLeave)
+      node.removeEventListener("dragover", handleDragOver)
+      node.removeEventListener("drop", handleDrop)
+    }
+  }
 }
