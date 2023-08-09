@@ -1,50 +1,64 @@
 <script lang="ts">
-  export let left = 200
-  export let top = 200
-  let containerW: number
-  let containerH: number
-  let dragging = false
-
-  function handleDrag(event: { movementX: number; movementY: number }) {
-    if (dragging && (typeof containerH === "number" && typeof containerW === "number")) {
-      if (left < 330 && left > 0) {
-        left += event.movementX
-      } else {
-        left = left <= 0 ? left + 10 : left - 10
-      }
-      if (top > 0 && top < 360) {
-        top += event.movementY
-      } else {
-        top = top <= 0 ? top + 10 : top - 10
-      }
-    }
-  }
+  import { draggable, dropZone } from "$lib/dragAndDrop"
+  import type { PageData } from "./$types"
+  export let data: PageData
 </script>
 
-<div
-  bind:clientWidth={containerW}
-  bind:clientHeight={containerH}
-  class="relative ml-32 h-[500px] w-[500px] border-2 border-white"
->
-  <section
-    class="draggable rounded-md bg-pink-400"
-    on:mousedown={() => (dragging = true)}
-    style="left: {left}px; top: {top}px;"
-  >
-    <p class="text-white">Drag me</p>
-  </section>
-</div>
-<svelte:window
-  on:mouseup={() => (dragging = false)}
-  on:mousemove={handleDrag}
-/>
+<ul>
+  {#each data.columns as column}
+    {@const elements = data.elements.filter(
+      (ele) => ele.columnId === column.id
+    )}
+    <li
+      class="h-60 w-60 border-2 border-white p-2 text-white"
+      class:area={true}
+      use:dropZone={{
+        onDropZone(columnData) {
+          const card = data.elements.find((e) => e.id === Number(columnData.id))
+          if (card) {
+            if (card.columnId === 1 && columnData.columnId === 2) {
+              const newCard = {
+                title: card.title,
+                id: Math.floor(Math.random() * 10000),
+                columnId: 2,
+              }
+              data = {
+                ...data,
+                elements: data.elements.concat(newCard),
+              }
+            } else if (card.columnId === 2 && columnData.columnId === 1) {
+              data = {
+                ...data,
+                elements: data.elements.filter((ele) => ele.id !== card.id),
+              }
+            } else if (card.columnId === 2 && columnData.columnId === 2) {
+              const removeCard = data.elements.filter((ele) => ele.id !== card.id)
+              data = {
+                ...data,
+                elements: removeCard.concat(card)
+              }
+            }
+          }
+        },
+        columnId: column.id,
+      }}
+    >
+      <ul>
+        {#each elements as element}
+          <li class="text-white" use:draggable={element.id}>{element.title}</li>
+        {/each}
+      </ul>
+    </li>
+  {/each}
+</ul>
 
 <style lang="postcss">
-  .draggable {
-    user-select: none;
-    cursor: move;
-    border: solid 1px gray;
-    position: absolute;
-    padding: 50px;
+  .area:global(.droppable) {
+    outline: 0.1rem solid red;
+    outline-offset: 0.25rem;
+  }
+
+  .area:global(.droppable) * {
+    pointer-events: none;
   }
 </style>
